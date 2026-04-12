@@ -273,6 +273,56 @@
       var body = JSON.stringify(list, null, 2);
       var contentB64 = toBase64Utf8(body);
 
+      function doPut(sha, hasRetried) {
+        var payload = {
+          message: "chore: sync favorites (AI News)",
+          content: contentB64,
+          branch: GITHUB_BRANCH,
+        };
+        if (sha) payload.sha = sha;
+
+        return fetch(githubContentsApiUrl(), {
+          method: "PUT",
+          headers: Object.assign(
+            { "Content-Type": "application/json" },
+            githubHeaders(token)
+          ),
+          body: JSON.stringify(payload),
+        }).then(function (res) {
+          if (res.status === 409 && !hasRetried) {
+            return loadFavoritesFromGithub().then(function (freshRemote) {
+              if (freshRemote === null) {
+                lastGithubError = lastGithubError || "GitHub PUT conflict and failed to refresh remote SHA.";
+                setSyncStatus(lastGithubError);
+                resolve(false);
+                return;
+              }
+              if (!freshRemote.sha) {
+                lastGithubError = "GitHub PUT conflict and the remote file SHA could not be retrieved.";
+                console.warn("[favorites]", lastGithubError);
+                setSyncStatus(lastGithubError);
+                resolve(false);
+                return;
+              }
+              console.warn("[favorites] GitHub PUT conflict detected, retrying with updated SHA.");
+              return doPut(freshRemote.sha, true);
+            });
+          }
+
+          if (!res.ok) {
+            return res.text().then(function (txt) {
+              lastGithubError = "GitHub PUT failed: " + res.status + " " + txt;
+              console.warn("[favorites]", lastGithubError);
+              setSyncStatus(lastGithubError);
+              resolve(false);
+            });
+          }
+
+          setSyncStatus("Synced with GitHub");
+          resolve(true);
+        });
+      }
+
       loadFavoritesFromGithub()
         .then(function (remote) {
           if (remote === null) {
@@ -280,32 +330,7 @@
             resolve(false);
             return;
           }
-          var payload = {
-            message: "chore: sync favorites (AI News)",
-            content: contentB64,
-            branch: GITHUB_BRANCH,
-          };
-          if (remote.sha) payload.sha = remote.sha;
-
-          return fetch(githubContentsApiUrl(), {
-            method: "PUT",
-            headers: Object.assign(
-              { "Content-Type": "application/json" },
-              githubHeaders(token)
-            ),
-            body: JSON.stringify(payload),
-          }).then(function (res) {
-            if (!res.ok) {
-              return res.text().then(function (txt) {
-                lastGithubError = "GitHub PUT failed: " + res.status + " " + txt;
-                console.warn("[favorites]", lastGithubError);
-                setSyncStatus(lastGithubError);
-                resolve(false);
-              });
-            }
-            setSyncStatus("Synced with GitHub");
-            resolve(true);
-          });
+          return doPut(remote.sha, false);
         })
         .catch(function (err) {
           lastGithubError = "GitHub PUT error: " + String(err);
