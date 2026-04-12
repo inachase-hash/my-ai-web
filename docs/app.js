@@ -9,6 +9,7 @@
   var GITHUB_FILE_PATH = "favorites.json";
   var GITHUB_BRANCH = "main";
   var GITHUB_API = "https://api.github.com";
+  var GITHUB_RAW_BASE = "https://raw.githubusercontent.com";
   /** Stored only in this browser — never committed (required for GitHub Pages). */
   var GITHUB_TOKEN_STORAGE_KEY = "ai-news-github-pat";
 
@@ -61,6 +62,20 @@
       encodeURIComponent(GITHUB_REPO) +
       "/contents/" +
       encodeURIComponent(GITHUB_FILE_PATH)
+    );
+  }
+
+  function githubRawFileUrl() {
+    return (
+      GITHUB_RAW_BASE +
+      "/" +
+      encodeURIComponent(GITHUB_OWNER) +
+      "/" +
+      encodeURIComponent(GITHUB_REPO) +
+      "/" +
+      encodeURIComponent(GITHUB_BRANCH) +
+      "/" +
+      GITHUB_FILE_PATH
     );
   }
 
@@ -166,7 +181,34 @@
     return new Promise(function (resolve) {
       var token = getGithubToken();
       if (!token) {
-        resolve(null);
+        fetch(githubRawFileUrl())
+          .then(function (res) {
+            if (res.status === 404) {
+              resolve({ list: [], sha: null });
+              return;
+            }
+            if (!res.ok) {
+              return res.text().then(function (txt) {
+                console.warn("[favorites] GitHub public read failed:", res.status, txt);
+                resolve(null);
+              });
+            }
+            return res.text().then(function (txt) {
+              var parsed;
+              try {
+                parsed = JSON.parse(txt);
+              } catch (e) {
+                console.warn("[favorites] Invalid JSON in public favorites.json");
+                resolve(null);
+                return;
+              }
+              resolve({ list: normalizeFavoriteList(parsed), sha: null });
+            });
+          })
+          .catch(function (err) {
+            console.warn("[favorites] GitHub public read error:", err);
+            resolve(null);
+          });
         return;
       }
       var url =
@@ -215,6 +257,7 @@
     return new Promise(function (resolve) {
       var token = getGithubToken();
       if (!token) {
+        setSyncStatus("Read-only sync active. Add a token to save back to GitHub.");
         resolve(false);
         return;
       }
@@ -265,7 +308,6 @@
 
   var pushTimer = null;
   function scheduleGithubPush() {
-    if (!getGithubToken()) return;
     if (pushTimer) clearTimeout(pushTimer);
     pushTimer = setTimeout(function () {
       pushTimer = null;
@@ -275,8 +317,7 @@
 
   /** Pull from GitHub, merge into localStorage, refresh UI; then push merged snapshot. */
   function syncFromGithubOnLoad() {
-    if (!getGithubToken()) return;
-    setSyncStatus("Syncing with GitHub…");
+    setSyncStatus("Loading favorites from GitHub…");
     loadFavoritesFromGithub()
       .then(function (remote) {
         if (remote === null) {
@@ -291,9 +332,13 @@
           saveFavorites(merged);
           syncFeedStars();
           renderFavorites();
-          return saveFavoritesToGithub();
+          return getGithubToken() ? saveFavoritesToGithub() : null;
         }
-        setSyncStatus("Synced with GitHub");
+        setSyncStatus(
+          getGithubToken()
+            ? "Synced with GitHub"
+            : "Loaded from GitHub (read-only; add token to save)"
+        );
       })
       .catch(function (err) {
         console.warn("[favorites] syncFromGithubOnLoad:", err);
