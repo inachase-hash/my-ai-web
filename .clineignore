@@ -1,3 +1,13 @@
+# 在 .clineignore 加上这两行，防止它扫描大数据
+**/*.json
+**/data/**
+**/favorites/**
+# 彻底封死所有可能的大型元数据
+.vscode/
+.idea/
+*.db
+*.sqlite3
+
 .git/
 __pycache__/
 docs/

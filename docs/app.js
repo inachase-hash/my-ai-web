@@ -12,6 +12,7 @@
   var GITHUB_RAW_BASE = "https://raw.githubusercontent.com";
   /** Stored only in this browser — never committed (required for GitHub Pages). */
   var GITHUB_TOKEN_STORAGE_KEY = "ai-news-github-pat";
+  var lastGithubError = null;
 
   /**
    * Token order: localStorage (from in-page form) → window.__GITHUB_FAVORITES_TOKEN__ (optional local file).
@@ -181,7 +182,8 @@
     return new Promise(function (resolve) {
       var token = getGithubToken();
       if (!token) {
-        fetch(githubRawFileUrl())
+        lastGithubError = null;
+      fetch(githubRawFileUrl())
           .then(function (res) {
             if (res.status === 404) {
               resolve({ list: [], sha: null });
@@ -189,7 +191,8 @@
             }
             if (!res.ok) {
               return res.text().then(function (txt) {
-                console.warn("[favorites] GitHub public read failed:", res.status, txt);
+                lastGithubError = "GitHub public read failed: " + res.status + " " + txt;
+                console.warn("[favorites]", lastGithubError);
                 resolve(null);
               });
             }
@@ -198,7 +201,8 @@
               try {
                 parsed = JSON.parse(txt);
               } catch (e) {
-                console.warn("[favorites] Invalid JSON in public favorites.json");
+                lastGithubError = "Invalid JSON in public favorites.json";
+                console.warn("[favorites]", lastGithubError);
                 resolve(null);
                 return;
               }
@@ -206,13 +210,15 @@
             });
           })
           .catch(function (err) {
-            console.warn("[favorites] GitHub public read error:", err);
+            lastGithubError = "GitHub public read error: " + String(err);
+            console.warn("[favorites]", lastGithubError);
             resolve(null);
           });
         return;
       }
       var url =
         githubContentsApiUrl() + "?ref=" + encodeURIComponent(GITHUB_BRANCH);
+      lastGithubError = null;
       fetch(url, { headers: githubHeaders(token) })
         .then(function (res) {
           if (res.status === 404) {
@@ -221,7 +227,8 @@
           }
           if (!res.ok) {
             return res.text().then(function (txt) {
-              console.warn("[favorites] GitHub GET failed:", res.status, txt);
+              lastGithubError = "GitHub GET failed: " + res.status + " " + txt;
+              console.warn("[favorites]", lastGithubError);
               resolve(null);
             });
           }
@@ -235,7 +242,8 @@
             try {
               parsed = JSON.parse(jsonStr);
             } catch (e) {
-              console.warn("[favorites] Invalid JSON in favorites.json on GitHub");
+              lastGithubError = "Invalid JSON in favorites.json on GitHub";
+              console.warn("[favorites]", lastGithubError);
               resolve(null);
               return;
             }
@@ -268,7 +276,7 @@
       loadFavoritesFromGithub()
         .then(function (remote) {
           if (remote === null) {
-            setSyncStatus("Cloud unavailable — using this device only");
+            setSyncStatus(lastGithubError || "Cloud unavailable — using this device only");
             resolve(false);
             return;
           }
@@ -289,8 +297,9 @@
           }).then(function (res) {
             if (!res.ok) {
               return res.text().then(function (txt) {
-                console.warn("[favorites] GitHub PUT failed:", res.status, txt);
-                setSyncStatus("Could not save to GitHub — kept on this device");
+                lastGithubError = "GitHub PUT failed: " + res.status + " " + txt;
+                console.warn("[favorites]", lastGithubError);
+                setSyncStatus(lastGithubError);
                 resolve(false);
               });
             }
@@ -299,8 +308,9 @@
           });
         })
         .catch(function (err) {
-          console.warn("[favorites] GitHub PUT error:", err);
-          setSyncStatus("Could not save to GitHub — kept on this device");
+          lastGithubError = "GitHub PUT error: " + String(err);
+          console.warn("[favorites]", lastGithubError);
+          setSyncStatus(lastGithubError);
           resolve(false);
         });
     });
@@ -321,7 +331,7 @@
     loadFavoritesFromGithub()
       .then(function (remote) {
         if (remote === null) {
-          setSyncStatus("Cloud unavailable — using this device only");
+          setSyncStatus(lastGithubError || "Cloud unavailable — using this device only");
           return;
         }
         var local = normalizeFavoriteList(loadFavorites());
@@ -341,8 +351,9 @@
         );
       })
       .catch(function (err) {
+        lastGithubError = String(err);
         console.warn("[favorites] syncFromGithubOnLoad:", err);
-        setSyncStatus("Cloud unavailable — using this device only");
+        setSyncStatus(lastGithubError || "Cloud unavailable — using this device only");
       });
   }
 

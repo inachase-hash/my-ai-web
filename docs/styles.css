@@ -1,13 +1,13 @@
 :root {
-  --bg: #0f1419;
-  --surface: #1a2332;
-  --text: #e7ecf3;
-  --muted: #8b9cb3;
-  --accent: #5b9fd4;
-  --accent-hover: #7eb8e8;
-  --border: #2d3a4d;
-  --favorite: #c9a227;
-  --favorite-glow: rgba(201, 162, 39, 0.22);
+  --bg: #0e1725;
+  --surface: #172336;
+  --text: #f5f8ff;
+  --muted: #93a4c0;
+  --accent: #7aa7ff;
+  --accent-hover: #a4c4ff;
+  --border: rgba(255, 255, 255, 0.10);
+  --favorite: #f0c948;
+  --favorite-glow: rgba(240, 201, 72, 0.24);
 }
 
 * {
@@ -17,7 +17,8 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
-  background: var(--bg);
+  min-height: 100vh;
+  background: radial-gradient(circle at top, rgba(122, 167, 255, 0.08), transparent 28%), var(--bg);
   color: var(--text);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -82,10 +83,10 @@ h1 {
 }
 
 .sync-panel {
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  padding: 0.75rem 0.95rem;
   margin-bottom: 1rem;
   font-size: 0.88rem;
 }
@@ -160,12 +161,12 @@ h1 {
 
 .card {
   position: relative;
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 1rem 1.1rem;
-  margin-bottom: 0.85rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  border-radius: 16px;
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card.is-favorited {
@@ -218,8 +219,8 @@ h1 {
 }
 
 .title {
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   margin: 0 0 0.5rem;
   line-height: 1.35;
 }
@@ -254,8 +255,8 @@ h1 {
 }
 
 .summary {
-  font-size: 0.9rem;
-  color: #c5d0e0;
+  font-size: 0.92rem;
+  color: #c3d2ef;
   margin: 0;
 }
 
