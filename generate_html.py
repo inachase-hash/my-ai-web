@@ -77,6 +77,15 @@ def generate_html(news: list[dict[str, str]], output_path: Path) -> None:
     <section class="favorites-section" aria-labelledby="favorites-heading">
       <h2 class="section-heading" id="favorites-heading">Favorites</h2>
       <p class="sync-status" id="github-sync-status" hidden></p>
+      <details class="sync-panel">
+        <summary>Cross-device sync (GitHub)</summary>
+        <p class="sync-panel-help" id="github-token-status">Add a token below to sync <code>favorites.json</code> in your repo. Stored only in this browser — not on GitHub in the site files.</p>
+        <div class="sync-panel-row">
+          <input type="password" id="github-token-input" class="sync-token-input" autocomplete="off" placeholder="Fine-grained or classic PAT" aria-label="GitHub personal access token">
+          <button type="button" class="sync-btn" id="github-token-save">Save &amp; sync</button>
+          <button type="button" class="sync-btn sync-btn-secondary" id="github-token-clear">Remove token</button>
+        </div>
+      </details>
       <p class="favorites-empty" id="favorites-empty">No favorites yet. Star an article below.</p>
       <div id="favorites-list" class="favorites-list"></div>
     </section>
@@ -85,9 +94,8 @@ def generate_html(news: list[dict[str, str]], output_path: Path) -> None:
 {cards_html}
     </section>
     </main>
-    <footer>Favorites: localStorage always; optional GitHub sync if you add <code>github-config.local.js</code>. RSS refreshes when you run <code>main.py</code>.</footer>
+    <footer>Favorites in localStorage; optional GitHub sync via the panel above (token never committed). RSS refreshes when you run <code>main.py</code>.</footer>
   </div>
-  <script src="github-config.local.js"></script>
   <script src="app.js" defer></script>
 </body>
 </html>

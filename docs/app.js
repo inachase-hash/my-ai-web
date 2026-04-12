@@ -9,15 +9,47 @@
   var GITHUB_FILE_PATH = "favorites.json";
   var GITHUB_BRANCH = "main";
   var GITHUB_API = "https://api.github.com";
+  /** Stored only in this browser — never committed (required for GitHub Pages). */
+  var GITHUB_TOKEN_STORAGE_KEY = "ai-news-github-pat";
 
   /**
-   * Token must NOT be committed. Set in github-config.local.js:
-   *   window.__GITHUB_FAVORITES_TOKEN__ = "ghp_...";
+   * Token order: localStorage (from in-page form) → window.__GITHUB_FAVORITES_TOKEN__ (optional local file).
+   * Do not commit tokens to the repo.
    */
   function getGithubToken() {
     if (typeof window === "undefined") return "";
+    try {
+      var fromLs = localStorage.getItem(GITHUB_TOKEN_STORAGE_KEY);
+      if (fromLs && String(fromLs).trim()) return String(fromLs).trim();
+    } catch (e) {}
     var t = window.__GITHUB_FAVORITES_TOKEN__;
     return t ? String(t).trim() : "";
+  }
+
+  function setGithubTokenInBrowser(token) {
+    try {
+      if (token && String(token).trim()) {
+        localStorage.setItem(GITHUB_TOKEN_STORAGE_KEY, String(token).trim());
+      } else {
+        localStorage.removeItem(GITHUB_TOKEN_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.warn("[favorites] Could not store token:", e);
+    }
+  }
+
+  function hasGithubTokenConfigured() {
+    return !!getGithubToken();
+  }
+
+  function updateSyncPanelUi() {
+    var hint = document.getElementById("github-token-status");
+    if (!hint) return;
+    if (hasGithubTokenConfigured()) {
+      hint.textContent = "GitHub sync is on for this browser (token stored locally only).";
+    } else {
+      hint.textContent = "Add a token below to sync favorites.json to your repo from any device.";
+    }
   }
 
   function githubContentsApiUrl() {
@@ -450,10 +482,39 @@
     toggleFavorite(article.dataset.link);
   }
 
+  function wireGithubSyncPanel() {
+    var input = document.getElementById("github-token-input");
+    var saveBtn = document.getElementById("github-token-save");
+    var clearBtn = document.getElementById("github-token-clear");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", function () {
+        var v = input && input.value ? input.value.trim() : "";
+        if (!v) {
+          setSyncStatus("Paste a GitHub token first.");
+          return;
+        }
+        setGithubTokenInBrowser(v);
+        if (input) input.value = "";
+        updateSyncPanelUi();
+        syncFromGithubOnLoad();
+      });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        setGithubTokenInBrowser("");
+        if (input) input.value = "";
+        updateSyncPanelUi();
+        setSyncStatus("");
+      });
+    }
+    updateSyncPanelUi();
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     syncFeedStars();
     renderFavorites();
     document.body.addEventListener("click", onStarClick);
+    wireGithubSyncPanel();
     syncFromGithubOnLoad();
   });
 

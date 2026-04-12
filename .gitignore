@@ -1,2 +1,2 @@
 # Local GitHub PAT for favorites sync (see github-config.example.js)
-output/github-config.local.js
+docs/github-config.local.js

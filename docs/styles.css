@@ -81,6 +81,73 @@ h1 {
   display: none;
 }
 
+.sync-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+}
+
+.sync-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.sync-panel-help {
+  margin: 0.6rem 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.sync-panel-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.35rem;
+}
+
+.sync-token-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.sync-btn {
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sync-btn:hover {
+  background: var(--accent-hover);
+}
+
+.sync-btn-secondary {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.sync-btn-secondary:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
 .favorites-list {
   display: flex;
   flex-direction: column;

@@ -1,6 +1,6 @@
 # AI News Aggregator
 
-A small Python tool that pulls AI-related headlines from several RSS feeds, removes near-duplicate titles, ranks items by recency and source weight, then writes `data/news.json` and a static `output/index.html`.
+A small Python tool that pulls AI-related headlines from several RSS feeds, removes near-duplicate titles, ranks items by recency and source weight, then writes `data/news.json` and a static site under **`docs/`** (GitHub Pages–friendly).
 
 ## Setup
 
@@ -23,29 +23,33 @@ This will:
 2. Normalize entries and drop duplicates (exact normalized title + fuzzy title match).
 3. Rank by recency (exponential decay) and source weight, keep the top 20.
 4. Save `data/news.json`.
-5. Generate `output/index.html` (links to `output/styles.css` and `output/app.js`).
+5. Generate `docs/index.html` (links to `docs/styles.css` and `docs/app.js`).
 
-Open `output/index.html` in a browser to view the page. **Favorites** (star on each article) are saved in **localStorage** in your browser and persist across refreshes; keep `app.js` and `styles.css` next to `index.html` so relative URLs work.
+Open `docs/index.html` in a browser, or use **GitHub Pages** with the **`/docs`** folder on `main` so the site updates whenever you push after `main.py`.
+
+**Favorites** use **localStorage**; keep `app.js` and `styles.css` next to `index.html` in `docs/`.
 
 ## Project layout
 
-- `main.py` — entrypoint.
+- `main.py` — entrypoint (writes into `docs/`).
 - `rss_sources.py` — feed URLs, display names, and weights.
 - `utils.py` — fetch, parse, dedupe, rank.
 - `generate_html.py` — JSON → static HTML.
 - `data/news.json` — latest article list (overwritten each run).
-- `output/index.html` — rendered page (overwritten each run).
-- `output/styles.css` — page styles (not overwritten by `main.py`).
-- `output/app.js` — favorites UI (localStorage; not overwritten by `main.py`).
-- `output/github-config.example.js` — template for optional GitHub sync (copy to `github-config.local.js`).
+- `docs/index.html` — rendered page (overwritten each run).
+- `docs/styles.css` — page styles (not overwritten by `main.py`).
+- `docs/app.js` — favorites UI (localStorage + optional GitHub sync; not overwritten by `main.py`).
+- `docs/github-config.example.js` — optional local token template (copy to `github-config.local.js` for file-based dev only).
 
-### Optional: sync favorites to GitHub
+### Optional: sync favorites to GitHub (`favorites.json`)
 
-Favorites stay in **localStorage** first. To mirror them to `favorites.json` in repo [`inachase-hash/my-ai-web`](https://github.com/inachase-hash/my-ai-web):
+Favorites stay in **localStorage**; the app can also read/write [`favorites.json`](https://github.com/inachase-hash/my-ai-web/blob/main/favorites.json) in your repo via the GitHub API.
 
-1. Copy `output/github-config.example.js` to `output/github-config.local.js` (this path is listed in `.gitignore`).
-2. Set `window.__GITHUB_FAVORITES_TOKEN__` to a fine-scoped PAT (`repo` scope for that repository). **Do not commit the token.** If a token was ever pasted into chat or committed, **revoke it in GitHub** and create a new one.
-3. Open the page over **HTTPS** (e.g. GitHub Pages). The GitHub REST API may fail from `file://` or some origins (**CORS**); if sync fails, the UI falls back to local-only and shows a short status under Favorites.
+**On GitHub Pages** (or any HTTPS URL): open **Favorites → “Cross-device sync (GitHub)”**, paste a **personal access token**, click **Save & sync**. The token is stored **only in that browser** (localStorage), not in your repo.
+
+Create a token with permission to update that repo (**classic:** `repo`, or **fine-grained:** Contents read/write on `my-ai-web` only). **Never commit a PAT.** If one was ever exposed, revoke it and make a new token.
+
+Opening the page as a local **`file://`** file may still hit **CORS** limits on the GitHub API; use the HTTPS site for sync.
 
 ## Requirements
 

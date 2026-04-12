@@ -16,9 +16,10 @@ from utils import (
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
-OUTPUT_DIR = ROOT / "output"
+# Static site + GitHub Pages: build into docs/ (no separate copy step).
+DOCS_DIR = ROOT / "docs"
 NEWS_JSON = DATA_DIR / "news.json"
-INDEX_HTML = OUTPUT_DIR / "index.html"
+INDEX_HTML = DOCS_DIR / "index.html"
 
 
 def main() -> None:
@@ -39,6 +40,7 @@ def main() -> None:
     )
     print(f"Wrote {NEWS_JSON} ({len(payload)} articles)")
 
+    DOCS_DIR.mkdir(parents=True, exist_ok=True)
     generate_from_json_file(NEWS_JSON, INDEX_HTML)
     print(f"Wrote {INDEX_HTML}")
 

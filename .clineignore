@@ -1,0 +1,10 @@
+.git/
+__pycache__/
+docs/
+data/
+favorites/
+.venv/
+node_modules/
+*.json
+*.csv
+*.log
