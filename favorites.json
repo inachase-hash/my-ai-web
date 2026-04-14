@@ -1,11 +1,5 @@
 [
   {
-    "title": "A new look for Artificial Analysis",
-    "link": "https://artificialanalysis.ai/articles/a-new-look-for-artificial-analysis",
-    "source": "Artificial Analysis",
-    "saved_at": "2026-04-12T12:52:38.110Z"
-  },
-  {
     "title": "Sarvam 105B and Sarvam 30B: India enters the open-weights race",
     "link": "https://artificialanalysis.ai/articles/sarvam-105b-Sarvam-30b-everything-you-need-to-know",
     "source": "Artificial Analysis",
@@ -22,5 +16,11 @@
     "link": "https://artificialanalysis.ai/articles/gemma-4-everything-you-need-to-know",
     "source": "Artificial Analysis",
     "saved_at": "2026-04-12T13:55:20.024Z"
+  },
+  {
+    "title": "MiniMax M2.7: Everything you need to know",
+    "link": "https://artificialanalysis.ai/articles/minimax-m2-7-everything-you-need-to-know",
+    "source": "Artificial Analysis",
+    "saved_at": "2026-04-12T13:55:40.648Z"
   }
 ]
