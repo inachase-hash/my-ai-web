@@ -127,8 +127,21 @@
 
   /**
    * Merge by link. Newer saved_at wins; on tie, the later list wins (local is merged after remote).
+   * Remote-only items older than the latest local change are treated as stale so local deletions
+   * are not accidentally restored during sync.
    */
   function mergeFavoriteLists(local, remote) {
+    var localLinks = new Set();
+    var latestLocalSavedAt = "";
+    for (var i = 0; i < local.length; i++) {
+      var item = normalizeFavoriteItem(local[i]);
+      if (!item) continue;
+      localLinks.add(item.link);
+      if (item.saved_at && item.saved_at > latestLocalSavedAt) {
+        latestLocalSavedAt = item.saved_at;
+      }
+    }
+
     var map = Object.create(null);
     function upsert(item) {
       var n = normalizeFavoriteItem(item);
@@ -143,8 +156,22 @@
       var ct = cur.saved_at || "";
       if (nt > ct || nt === ct) map[k] = n;
     }
-    for (var i = 0; i < remote.length; i++) upsert(remote[i]);
-    for (var j = 0; j < local.length; j++) upsert(local[j]);
+
+    for (var j = 0; j < remote.length; j++) {
+      var item = normalizeFavoriteItem(remote[j]);
+      if (!item) continue;
+      if (
+        local.length > 0 &&
+        latestLocalSavedAt &&
+        !localLinks.has(item.link) &&
+        item.saved_at &&
+        item.saved_at <= latestLocalSavedAt
+      ) {
+        continue;
+      }
+      upsert(item);
+    }
+    for (var k = 0; k < local.length; k++) upsert(local[k]);
     var out = [];
     for (var link in map) {
       if (Object.prototype.hasOwnProperty.call(map, link)) out.push(map[link]);
@@ -577,7 +604,7 @@
         setGithubTokenInBrowser(v);
         if (input) input.value = "";
         updateSyncPanelUi();
-        syncFromGithubOnLoad();
+        saveFavoritesToGithub();
       });
     }
     if (clearBtn) {
