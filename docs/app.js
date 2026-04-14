@@ -287,7 +287,7 @@
     });
   }
 
-  /** Save current localStorage favorites to GitHub (read sha, then PUT). Never throws. */
+  /** Save current localStorage favorites to GitHub. Always pull latest remote first, merge local changes, then PUT. Never throws. */
   function saveFavoritesToGithub() {
     return new Promise(function (resolve) {
       var token = getGithubToken();
@@ -296,17 +296,30 @@
         resolve(false);
         return;
       }
-      var list = normalizeFavoriteList(loadFavorites());
-      var body = JSON.stringify(list, null, 2);
-      var contentB64 = toBase64Utf8(body);
 
-      function doPut(sha, hasRetried) {
+      var local = normalizeFavoriteList(loadFavorites());
+
+      function computeMerged(remote) {
+        var merged = mergeFavoriteLists(local, remote.list);
+        var localJson = favoritesStableJson(local);
+        var mergedJson = favoritesStableJson(merged);
+        if (mergedJson !== localJson) {
+          saveFavorites(merged);
+          syncFeedStars();
+          renderFavorites();
+        }
+        return merged;
+      }
+
+      function doPut(remote, retriesLeft) {
+        var merged = computeMerged(remote);
+        var contentB64 = toBase64Utf8(JSON.stringify(merged, null, 2));
         var payload = {
           message: "chore: sync favorites (AI News)",
           content: contentB64,
           branch: GITHUB_BRANCH,
         };
-        if (sha) payload.sha = sha;
+        if (remote.sha) payload.sha = remote.sha;
 
         return fetch(githubContentsApiUrl(), {
           method: "PUT",
@@ -316,7 +329,7 @@
           ),
           body: JSON.stringify(payload),
         }).then(function (res) {
-          if (res.status === 409 && !hasRetried) {
+          if (res.status === 409 && retriesLeft > 0) {
             return loadFavoritesFromGithub().then(function (freshRemote) {
               if (freshRemote === null) {
                 lastGithubError = lastGithubError || "GitHub PUT conflict and failed to refresh remote SHA.";
@@ -324,15 +337,12 @@
                 resolve(false);
                 return;
               }
-              if (!freshRemote.sha) {
-                lastGithubError = "GitHub PUT conflict and the remote file SHA could not be retrieved.";
-                console.warn("[favorites]", lastGithubError);
-                setSyncStatus(lastGithubError);
-                resolve(false);
-                return;
-              }
-              console.warn("[favorites] GitHub PUT conflict detected, retrying with updated SHA.");
-              return doPut(freshRemote.sha, true);
+              console.warn(
+                "[favorites] GitHub PUT conflict detected, retrying with updated remote state.",
+                "retries left:",
+                retriesLeft - 1
+              );
+              return doPut(freshRemote, retriesLeft - 1);
             });
           }
 
@@ -357,7 +367,15 @@
             resolve(false);
             return;
           }
-          return doPut(remote.sha, false);
+
+          var merged = computeMerged(remote);
+          if (favoritesStableJson(merged) === favoritesStableJson(remote.list)) {
+            setSyncStatus("Synced with GitHub");
+            resolve(true);
+            return;
+          }
+
+          return doPut(remote, 2);
         })
         .catch(function (err) {
           lastGithubError = "GitHub PUT error: " + String(err);
